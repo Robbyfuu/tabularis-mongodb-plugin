@@ -5,9 +5,9 @@
 # tabularis-mongodb-plugin
 <p align="center">
 
-![](https://img.shields.io/github/release/debba/tabularis-plugin-mongodb.svg?style=flat)
-![](https://img.shields.io/github/downloads/debba/tabularis-plugin-mongodb/total.svg?style=flat)
-![Build & Release](https://github.com/debba/tabularis-plugin-mongodb/workflows/Release/badge.svg)
+![](https://img.shields.io/github/release/debba/tabularis-mongodb-plugin.svg?style=flat)
+![](https://img.shields.io/github/downloads/debba/tabularis-mongodb-plugin/total.svg?style=flat)
+![Build & Release](https://github.com/debba/tabularis-mongodb-plugin/workflows/Release/badge.svg)
 [![Discord](https://img.shields.io/discord/1470772941296894128?color=5865F2&logo=discord&logoColor=white)](https://discord.gg/YrZPHAwMSG)
 
 </p>
