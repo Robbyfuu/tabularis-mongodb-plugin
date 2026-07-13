@@ -1,8 +1,8 @@
 {
-  "id": "mongodb",
-  "name": "MongoDB",
+  "id": "mongodb-atlas",
+  "name": "MongoDB Atlas",
   "version": "0.1.0",
-  "description": "MongoDB NoSQL database driver",
+  "description": "MongoDB Atlas / MongoDB driver with SRV, TLS and full URI support",
   "default_port": 27017,
   "executable": "tabularis-mongodb-plugin",
   "capabilities": {
