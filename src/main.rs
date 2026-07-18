@@ -62,6 +62,16 @@ fn main() {
                 continue;
             }
         };
+        // Multi-database navigation: the host sends the database the user
+        // selected in the request-level `schema` field, which outranks the
+        // database stored on the connection.
+        let request_database = match get_string_param(params, "schema") {
+            Ok(database) => database.map(str::to_owned),
+            Err(error) => {
+                send_error(&mut stdout, id, -32602, &error);
+                continue;
+            }
+        };
 
         let client = match get_or_create_client(&rt, &mut clients, &uri) {
             Ok(c) => c,
@@ -77,7 +87,7 @@ fn main() {
         };
         let default_database = client.default_database();
         let db_name = resolve_database_name(
-            explicit_database.as_deref(),
+            request_database.as_deref().or(explicit_database.as_deref()),
             default_database.as_ref().map(|database| database.name()),
         );
 
@@ -706,7 +716,7 @@ async fn get_collections(client: &Client, db_name: &str) -> Result<JsonValue, St
     let names = db.list_collection_names().await.map_err(safe_mongo_error)?;
     let result: Vec<JsonValue> = names
         .iter()
-        .map(|name| json!({ "name": name, "schema": null, "comment": null }))
+        .map(|name| json!({ "name": name, "schema": db_name, "comment": null }))
         .collect();
     Ok(json!(result))
 }
@@ -1383,7 +1393,7 @@ async fn get_schema_snapshot(client: &Client, db_name: &str) -> Result<JsonValue
             .unwrap_or(json!([]));
         snapshots.push(json!({
             "name": name,
-            "schema": null,
+            "schema": db_name,
             "comment": null,
             "columns": columns,
             "foreign_keys": [],
