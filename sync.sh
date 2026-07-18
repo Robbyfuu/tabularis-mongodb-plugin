@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-plugin_id="mongodb-atlas"
+plugin_id="mongodb-uri"
 executable="tabularis-mongodb-plugin"
 
 case "$(uname -s)" in
