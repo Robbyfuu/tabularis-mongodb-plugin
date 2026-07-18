@@ -55,8 +55,8 @@ fn main() {
                 continue;
             }
         };
-        let explicit_database = match get_string_param(conn_params, "database") {
-            Ok(database) => database.map(str::to_owned),
+        let explicit_database = match get_database_param(conn_params) {
+            Ok(database) => database,
             Err(error) => {
                 send_error(&mut stdout, id, -32602, &error);
                 continue;
@@ -341,7 +341,7 @@ fn build_uri(params: &JsonValue) -> Result<String, String> {
 
     let host = get_string_param(params, "host")?.unwrap_or("localhost");
     let port = params.get("port").and_then(|p| p.as_u64()).unwrap_or(27017);
-    let database = get_string_param(params, "database")?.unwrap_or("admin");
+    let database = get_database_param(params)?.unwrap_or_else(|| "admin".to_string());
     let username = get_string_param(params, "username")?.unwrap_or("");
     let password = get_string_param(params, "password")?.unwrap_or("");
 
@@ -360,6 +360,25 @@ fn build_uri(params: &JsonValue) -> Result<String, String> {
 
     append_query_options(&mut uri, params)?;
     Ok(uri)
+}
+
+/// The host stores `database` as a string for single-database drivers and as
+/// an array of selected names for multi-database ones. Accept both; for an
+/// array the first entry is the initial database, and an empty array means
+/// none was chosen yet.
+fn get_database_param(params: &JsonValue) -> Result<Option<String>, String> {
+    match params.get("database") {
+        None | Some(JsonValue::Null) => Ok(None),
+        Some(JsonValue::String(value)) if value.trim().is_empty() => Ok(None),
+        Some(JsonValue::String(value)) => Ok(Some(value.clone())),
+        Some(JsonValue::Array(values)) => match values.first() {
+            None => Ok(None),
+            Some(JsonValue::String(value)) if value.trim().is_empty() => Ok(None),
+            Some(JsonValue::String(value)) => Ok(Some(value.clone())),
+            Some(_) => Err("Parameter 'database' must contain strings".to_string()),
+        },
+        Some(_) => Err("Parameter 'database' must be a string or an array of strings".to_string()),
+    }
 }
 
 fn get_string_param<'a>(params: &'a JsonValue, key: &str) -> Result<Option<&'a str>, String> {
@@ -1542,6 +1561,20 @@ mod tests {
         let params = json!({ "connectionUri": uri });
 
         assert_eq!(build_uri(&params).unwrap(), uri);
+    }
+
+    #[test]
+    fn database_array_uses_first_entry() {
+        // Multi-database drivers receive `database` as an array of selected
+        // names; the first one is the initial database.
+        let params = json!({ "host": "localhost", "database": ["finance", "audit"] });
+        assert_eq!(
+            build_uri(&params).unwrap(),
+            "mongodb://localhost:27017/finance"
+        );
+
+        let empty = json!({ "host": "localhost", "database": [] });
+        assert_eq!(build_uri(&empty).unwrap(), "mongodb://localhost:27017/admin");
     }
 
     #[test]
