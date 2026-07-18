@@ -1047,6 +1047,9 @@ fn parse_sql_from_clause(query: &str) -> Option<String> {
     let from_pos = upper.find(" FROM ")?;
     let rest = query[from_pos + 6..].trim();
     let name: &str = rest.split_whitespace().next()?;
+    // The host quotes identifiers (`SELECT * FROM "plans"`); the quotes are
+    // not part of the collection name.
+    let name = name.trim_matches(|c| c == '"' || c == '`' || c == '\'');
     if name.is_empty() {
         None
     } else {
@@ -1556,6 +1559,22 @@ fn docs_to_rows(docs: &[Document], columns: &[String]) -> Vec<JsonValue> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sql_from_clause_strips_identifier_quotes() {
+        assert_eq!(
+            parse_sql_from_clause("SELECT * FROM \"plans\""),
+            Some("plans".to_string())
+        );
+        assert_eq!(
+            parse_sql_from_clause("SELECT * FROM `plans` LIMIT 10"),
+            Some("plans".to_string())
+        );
+        assert_eq!(
+            parse_sql_from_clause("SELECT * FROM plans"),
+            Some("plans".to_string())
+        );
+    }
 
     #[test]
     fn full_srv_uri_is_returned_unchanged() {
