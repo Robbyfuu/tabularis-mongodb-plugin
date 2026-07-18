@@ -1545,6 +1545,23 @@ mod tests {
     }
 
     #[test]
+    fn connection_uri_param_wins_over_decomposed_fields() {
+        // `connection_uri` is the exact key the Tabularis host forwards for
+        // URI-passthrough drivers; the decomposed fields it sends alongside are
+        // display-only and must not influence the URI.
+        let uri = "mongodb+srv://user:password@cluster0.example.mongodb.net/?tls=true&retryWrites=true&w=majority&appName=Cluster0";
+        let params = json!({
+            "connection_uri": uri,
+            "host": "cluster0.example.mongodb.net",
+            "port": 27017,
+            "username": "user",
+            "database": "",
+        });
+
+        assert_eq!(build_uri(&params).unwrap(), uri);
+    }
+
+    #[test]
     fn uri_database_is_used_when_explicit_database_is_absent() {
         let runtime = tokio::runtime::Runtime::new().unwrap();
         let client = runtime
